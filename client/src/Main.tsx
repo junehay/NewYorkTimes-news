@@ -1,15 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bookmarks, Bookmark } from './modules/bookmark';
-import { useDispatch } from 'react-redux';
-import { addBookmark, delBookmark } from './modules/bookmark';
+import { Bookmarks } from './modules/bookmark';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { makeStyles } from '@material-ui/core/styles'
 import Container from '@material-ui/core/Container';
 import Input from '@material-ui/core/Input';
 import Button from '@material-ui/core/Button';
-import BookmarkIcon from '@material-ui/icons/Bookmark';
-import BookmarkBorderIcon from '@material-ui/icons/BookmarkBorder';
+import Article from './components/Article';
 
 const useStyles = makeStyles({
   container: {
@@ -33,7 +30,7 @@ interface List {
   body: string;
 }
 
-interface Article {
+interface ArticleSearch {
   multimedia: multimedia[],
   headline: Headline,
   web_url: string,
@@ -54,7 +51,6 @@ const Main = ({ bookmarks }: BookmarkProps) => {
   const [list, setList] = useState<List[]>([]);
   const [page, setPage] = useState(0);
   const searchRef = useRef<HTMLDivElement>(null);
-  const dispatch = useDispatch();
 
   useEffect(() => {
     if (page > 0) {
@@ -75,8 +71,8 @@ const Main = ({ bookmarks }: BookmarkProps) => {
         'page': page
       }
     })
-    const articles: Article[] = api.data.response.docs;
-    const data = articles.map((v: Article) => {
+    const ArticleSearchData: ArticleSearch[] = api.data.response.docs;
+    const data = ArticleSearchData.map((v: ArticleSearch) => {
       const image = v.multimedia.length > 0 ? `https://static01.nyt.com/${v.multimedia[0].url}` : '';
       const title = v.headline.main;
       const link = v.web_url;
@@ -90,44 +86,15 @@ const Main = ({ bookmarks }: BookmarkProps) => {
     return e?.key === 'Enter' ? Search() : false
   };
 
-  const bookmark = (obj: List): void => {
-      const chk: number = chkBookmarkList(bookmarks, obj);
-      if (chk > -1) {
-        dispatch(delBookmark(chk));
-      } else {
-        dispatch(addBookmark(obj));
-      }
-  };
-
-  const chkBookmarkList = (arr: List[], obj: object): number => {
-    let chk: number = -1;
-    arr.some((v: List, i: number): boolean | undefined => {
-      if (Object.entries(v).toString() === Object.entries(obj).toString()) {
-        chk = i;
-        return true;
-      }
-    })
-    return chk
-  }
-
   return (
     <Container className={classes.container} maxWidth="sm">
       <h2>New York Times Article Search</h2>
       <Link to='/bookmark'><Button>bookmark ({bookmarks.length})</Button></Link><br />
-      <Input ref={searchRef} onKeyPress={enterPress}/>
+      <Input ref={searchRef} onKeyPress={enterPress} style={{margin: '10px 0px'}}/>
       <Button onClick={() => Search()}>search</Button>
         { list.length > 0 ? list.map((v, i) => {
             return (
-              <div key={i} style={{height: '90px', display: 'flex', margin: '10px 0px', textAlign: 'left'}}>
-                <a href={v.link} target='_blank' rel='noopener noreferrer' style={{lineHeight: '90px', width: '20%', border: '1px solid #e6e6e6', marginRight: '10px'}}>
-                  <img src={v.image} style={{width: '100%', verticalAlign: 'middle', maxHeight: '100%'}}></img>
-                </a>
-                <div style={{width: '80%'}}>
-                  <a href={v.link} target='_blank' rel='noopener noreferrer'><span>{v.title}</span></a>{chkBookmarkList(bookmarks, v) > -1
-                    ? <BookmarkIcon className={classes.bookmark} cursor='pointer' onClick={() => bookmark(v)}/>  : <BookmarkBorderIcon className={classes.bookmark} cursor='pointer' onClick={() => bookmark(v)}/> }
-                  <p>{v.body}</p>
-                </div>
-              </div>
+              <Article key={i} bookmarks={bookmarks} item={v} />
             )
           }) : ''
         }
